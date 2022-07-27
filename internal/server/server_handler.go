@@ -19,7 +19,7 @@ type RouteParameters struct {
 	UserRepository interfaces.UserRepository
 }
 
-func GetRouters(uh *auth.UserAuthHandler, p RouteParameters) *chi.Mux {
+func GetRouters(uh *auth.UserAuthService, p RouteParameters) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)

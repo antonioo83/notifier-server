@@ -14,23 +14,18 @@ import (
 	"github.com/stretchr/testify/require"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
 
-type Product struct {
-	Type        string    `faker:"oneof: courier, waiter, pechka54, solo" json:"type,omitempty"`
-	Permissions [4]string `faker:"-" json:"permissions,omitempty"`
-}
-
 type RequestTest struct {
-	UserId      string     `faker:"uuid_hyphenated" json:"userId,omitempty"`
-	Role        string     `faker:"oneof: service,device" json:"role,omitempty"`
-	Title       string     `faker:"username" json:"title,omitempty"`
-	Description string     `faker:"len=256" json:"description,omitempty"`
-	Products    [1]Product `json:"products,omitempty"`
+	UserId      string `faker:"uuid_hyphenated" json:"userId,omitempty"`
+	Role        string `faker:"oneof: service,device" json:"role,omitempty"`
+	Title       string `faker:"username" json:"title,omitempty"`
+	Description string `faker:"len=256" json:"description,omitempty"`
 }
 
 func TestGetRouters(t *testing.T) {
@@ -44,17 +39,16 @@ func TestGetRouters(t *testing.T) {
 				UserId: "",
 				Role:   "",
 				Title:  "",
-				Products: [1]Product{{
-					Type:        "",
-					Permissions: [4]string{"create", "update", "delete", "get"},
-				}},
 			},
 		},
 	}
 
 	var pool *pgxpool.Pool
 	context := context.Background()
-	config := config.GetConfigSettings()
+	config, err := config.GetConfigSettings()
+	if err != nil {
+		log.Fatalf("Can't resd config: %s", err.Error())
+	}
 
 	pool, _ = pgxpool.Connect(context, config.DatabaseDsn)
 	defer pool.Close()
@@ -74,7 +68,6 @@ func TestGetRouters(t *testing.T) {
 	for _, tt := range userTests {
 		err := faker.FakeData(&tt.request)
 		assert.NoError(t, err)
-		tt.request.Products[0].Permissions = [4]string{"create", "update", "delete", "get"}
 
 		request, err := getJSONRequest(tt.request)
 		assert.NoError(t, err)
