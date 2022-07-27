@@ -12,10 +12,17 @@ import (
 )
 
 func main() {
-	config := config.GetConfigSettings()
+	config, err := config.GetConfigSettings()
+	if err != nil {
+		log.Fatalf("Can't resd config: %s", err.Error())
+	}
+
 	var pool *pgxpool.Pool
 	context := context.Background()
-	pool, _ = pgxpool.Connect(context, config.DatabaseDsn)
+	pool, err = pgxpool.Connect(context, config.DatabaseDsn)
+	if err != nil {
+		log.Fatalf("Can't connect to the database server: %s", err.Error())
+	}
 	defer pool.Close()
 
 	userRepository := factory.NewUserRepository(context, pool)
