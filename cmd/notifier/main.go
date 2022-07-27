@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"github.com/antonioo83/notifier-server/config"
-	factory2 "github.com/antonioo83/notifier-server/internal/handlers/auth/factory"
 	"github.com/antonioo83/notifier-server/internal/repositories/factory"
 	"github.com/antonioo83/notifier-server/internal/server"
+	factory2 "github.com/antonioo83/notifier-server/internal/services/auth/factory"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
 	"net/http"

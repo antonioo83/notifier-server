@@ -1,7 +1,7 @@
 package interfaces
 
 import (
-	"github.com/antonioo83/notifier-server/internal/handlers/auth"
+	"github.com/antonioo83/notifier-server/internal/services/auth"
 	"net/http"
 )
 

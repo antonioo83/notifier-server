@@ -3,9 +3,9 @@ package server
 import (
 	"compress/flate"
 	"github.com/antonioo83/notifier-server/config"
-	"github.com/antonioo83/notifier-server/internal/handlers"
-	"github.com/antonioo83/notifier-server/internal/handlers/auth"
 	"github.com/antonioo83/notifier-server/internal/repositories/interfaces"
+	"github.com/antonioo83/notifier-server/internal/services"
+	"github.com/antonioo83/notifier-server/internal/services/auth"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"golang.org/x/net/context"
@@ -47,7 +47,7 @@ func GetRouters(uh *auth.UserAuthService, p RouteParameters) *chi.Mux {
 		})
 	})
 
-	var params = handlers.UserRouteParameters{
+	var params = services.UserRouteParameters{
 		Config:         p.Config,
 		UserRepository: p.UserRepository,
 	}
