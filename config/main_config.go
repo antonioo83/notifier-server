@@ -2,8 +2,8 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"github.com/caarlos0/env/v6"
-	"log"
 )
 
 type Config struct {
@@ -28,10 +28,10 @@ type Callback struct {
 
 var cfg Config
 
-func GetConfigSettings() Config {
+func GetConfigSettings() (Config, error) {
 	const (
 		ServerAddress           = ":8080"
-		DatabaseDSN             = "postgres://postgres:433370@localhost:5432/license_server"
+		DatabaseDSN             = "postgres://postgres:433370@localhost:5432/notifier_server"
 		RequestTimeoutSec       = 60
 		AdminAuthToken          = "54d1ba805e2a4891aeac9299b618945e"
 		CallbackMaxAttempts     = 3
@@ -41,7 +41,7 @@ func GetConfigSettings() Config {
 
 	err := env.Parse(&cfg)
 	if err != nil {
-		log.Println(err)
+		return cfg, fmt.Errorf("I can't parse config: %w", err)
 	}
 
 	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "The address of the local server")
@@ -66,5 +66,5 @@ func GetConfigSettings() Config {
 	cfg.Callback.LimitUnitOfTime = CallbackLimitUnitOfTime
 	cfg.Callback.CronSpec = CallbackCronSpec
 
-	return cfg
+	return cfg, nil
 }
