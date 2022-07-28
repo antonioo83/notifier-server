@@ -11,11 +11,11 @@ import (
 	"strings"
 )
 
-type UserRequest struct {
-	UserId            string `validate:"required,max=64"`
-	Role              string `validate:"required,oneof='service' 'device'"`
-	Title             string `validate:"required,max=100"`
-	Description       string `validate:"max=256"`
+type UserCreateRequest struct {
+	UserId            string `validate:"required,max=64" faker:"uuid_hyphenated" json:"userId,omitempty`
+	Role              string `validate:"required,oneof='service' 'device'" faker:"oneof: service,device" json:"role,omitempty"`
+	Title             string `validate:"required,max=100" faker:"username" json:"title,omitempty"`
+	Description       string `validate:"max=256" faker:"len=256" json:"description,omitempty"`
 	IsRegenerateToken bool
 }
 
@@ -25,8 +25,9 @@ type UserRouteParameters struct {
 }
 
 var RequestError = fmt.Errorf("request has wrong data")
+var NotFoundError = fmt.Errorf("data not found")
 
-func CreateUser(userRequest UserRequest, param UserRouteParameters) (token string, error error) {
+func CreateUser(userRequest UserCreateRequest, param UserRouteParameters) (token string, error error) {
 	validate := validator.New()
 	err := validate.Struct(userRequest)
 	if err != nil {
@@ -60,7 +61,7 @@ func CreateUser(userRequest UserRequest, param UserRouteParameters) (token strin
 	return authToken, nil
 }
 
-func UpdateUser(userRequest UserRequest, param UserRouteParameters) (token string, error error) {
+func UpdateUser(userRequest UserCreateRequest, param UserRouteParameters) (token string, error error) {
 	validate := validator.New()
 	err := validate.Struct(userRequest)
 	if err != nil {
@@ -155,7 +156,11 @@ func GetUser(httpRequest UserGetRequest, param UserRouteParameters) (*UserRespon
 
 	user, err := param.UserRepository.FindByCode(httpRequest.UserId)
 	if err != nil {
-		return nil, fmt.Errorf("can't find an user in the database: %w", err)
+		return nil, fmt.Errorf("can't get an user from the database: %w", err)
+	}
+
+	if user == nil {
+		return nil, NotFoundError
 	}
 
 	var response UserResponse
