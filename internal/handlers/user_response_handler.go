@@ -49,8 +49,8 @@ func getJSONResponse(key string, value string) ([]byte, error) {
 	return jsonResp, nil
 }
 
-func getRequest(r *http.Request) (*services.UserRequest, error) {
-	var request services.UserRequest
+func getRequest(r *http.Request) (*services.UserCreateRequest, error) {
+	var request services.UserCreateRequest
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&request)
 	if err != nil {
@@ -127,6 +127,9 @@ func GetUserResponse(r *http.Request, w http.ResponseWriter, param services.User
 	if err != nil {
 		if errors.Is(err, services.RequestError) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		} else if errors.Is(err, services.NotFoundError) {
+			http.Error(w, err.Error(), http.StatusNoContent)
 			return
 		}
 
