@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"github.com/antonioo83/notifier-server/config"
 	"github.com/antonioo83/notifier-server/internal/repositories/factory"
+	"github.com/antonioo83/notifier-server/internal/services"
 	factory2 "github.com/antonioo83/notifier-server/internal/services/auth/factory"
 	"github.com/antonioo83/notifier-server/internal/utils"
 	"github.com/bxcodec/faker/v3"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jinzhu/copier"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -22,32 +24,21 @@ import (
 )
 
 type RequestTest struct {
-	UserId      string `faker:"uuid_hyphenated" json:"userId,omitempty"`
-	Role        string `faker:"oneof: service,device" json:"role,omitempty"`
-	Title       string `faker:"username" json:"title,omitempty"`
-	Description string `faker:"len=256" json:"description,omitempty"`
+	url             string
+	queryParams     map[string]string
+	method          string
+	content         string
+	responseStatus  int
+	responseContent string
+	description     string
 }
 
 func TestGetRouters(t *testing.T) {
-	userTests := []struct {
-		url     string
-		request RequestTest
-	}{
-		{
-			url: "/api/v1/users",
-			request: RequestTest{
-				UserId: "",
-				Role:   "",
-				Title:  "",
-			},
-		},
-	}
-
 	var pool *pgxpool.Pool
 	context := context.Background()
 	config, err := config.GetConfigSettings()
 	if err != nil {
-		log.Fatalf("Can't resd config: %s", err.Error())
+		log.Fatalf("Can't read config: %s", err.Error())
 	}
 
 	pool, _ = pgxpool.Connect(context, config.DatabaseDsn)
@@ -65,38 +56,113 @@ func TestGetRouters(t *testing.T) {
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
-	for _, tt := range userTests {
-		err := faker.FakeData(&tt.request)
-		assert.NoError(t, err)
+	var tests []RequestTest
+	createRequest := services.UserCreateRequest{}
+	err = faker.FakeData(&createRequest)
+	assert.NoError(t, err)
+	createContent, err := json.Marshal(createRequest)
+	assert.NoError(t, err)
+	tests = append(tests, RequestTest{
+		url:            ts.URL + "/api/v1/users",
+		method:         "POST",
+		content:        string(createContent),
+		responseStatus: 201,
+		description:    "user create",
+	})
 
-		request, err := getJSONRequest(tt.request)
-		assert.NoError(t, err)
+	afterCreateResponse := services.UserResponse{}
+	err = copier.Copy(&afterCreateResponse, &createRequest)
+	assert.NoError(t, err)
+	afterCreateResponse.UserId = createRequest.UserId
+	afterCreateResponseJson, err := json.Marshal(afterCreateResponse)
+	assert.NoError(t, err)
+	q := make(map[string]string)
+	q["userId"] = createRequest.UserId
+	tests = append(tests, RequestTest{
+		url:             ts.URL + "/api/v1/user",
+		queryParams:     q,
+		method:          "GET",
+		responseStatus:  200,
+		responseContent: string(afterCreateResponseJson),
+		description:     "get created user",
+	})
 
-		jsonRequest := getPostRequest(t, ts, tt.url, strings.NewReader(string(request)), config.Auth.AdminAuthToken)
-		resp, _ := sendRequest(t, jsonRequest)
+	updateRequest := services.UserCreateRequest{}
+	err = faker.FakeData(&updateRequest)
+	assert.NoError(t, err)
+	updateRequest.UserId = createRequest.UserId
+	updateContent, err := json.Marshal(updateRequest)
+	assert.NoError(t, err)
+	tests = append(tests, RequestTest{
+		url:            ts.URL + "/api/v1/users",
+		method:         "PUT",
+		content:        string(updateContent),
+		responseStatus: 204,
+		description:    "user update",
+	})
+
+	afterUpdateResponse := services.UserResponse{}
+	err = copier.Copy(&afterUpdateResponse, &updateRequest)
+	assert.NoError(t, err)
+	afterUpdateResponse.UserId = createRequest.UserId
+	afterUpdateResponseJson, err := json.Marshal(afterUpdateResponse)
+	assert.NoError(t, err)
+	tests = append(tests, RequestTest{
+		url:             ts.URL + "/api/v1/user",
+		queryParams:     q,
+		method:          "GET",
+		responseStatus:  200,
+		responseContent: string(afterUpdateResponseJson),
+		description:     "get updated user",
+	})
+
+	deleteRequest := services.UserDeleteRequest{UserId: createRequest.UserId}
+	deleteContent, err := json.Marshal(deleteRequest)
+	assert.NoError(t, err)
+	tests = append(tests, RequestTest{
+		url:            ts.URL + "/api/v1/users",
+		method:         "DELETE",
+		content:        string(deleteContent),
+		responseStatus: 202,
+		description:    "user delete",
+	})
+
+	assert.NoError(t, err)
+	tests = append(tests, RequestTest{
+		url:            ts.URL + "/api/v1/user",
+		queryParams:    q,
+		method:         "GET",
+		responseStatus: 204,
+		description:    "get deleted user",
+	})
+
+	for _, t1 := range tests {
+		fmt.Println("start test:" + t1.description)
+		createRequest, err := getRequest(t1.url, t1.queryParams, t1.method, strings.NewReader(t1.content), config.Auth.AdminAuthToken)
+		assert.NoError(t, err)
+		resp, respBody := sendRequest(t, createRequest)
 		require.NoError(t, err)
-		assert.Equal(t, 201, resp.StatusCode)
-		resp.Body.Close()
+		assert.Equal(t, t1.responseStatus, resp.StatusCode)
+		if t1.responseContent != "" {
+			assert.Equal(t, t1.responseContent, respBody)
+		}
 		assert.NoError(t, err)
 	}
 }
 
-func getJSONRequest(request RequestTest) ([]byte, error) {
-	jsonResp, err := json.Marshal(request)
-	if err != nil {
-		return []byte(""), fmt.Errorf("i can't decode json request: %w", err)
-	}
-
-	return jsonResp, nil
-}
-
-func getPostRequest(t *testing.T, ts *httptest.Server, path string, body io.Reader, token string) *http.Request {
-	req, err := http.NewRequest("POST", ts.URL+path, body)
+func getRequest(url string, queryParameters map[string]string, method string, body io.Reader, token string) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, body)
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", "Bearer "+token)
-	require.NoError(t, err)
+	if queryParameters != nil {
+		values := req.URL.Query()
+		for param, value := range queryParameters {
+			values.Add(param, value)
+		}
+		req.URL.RawQuery = values.Encode()
+	}
 
-	return req
+	return req, err
 }
 
 func sendRequest(t *testing.T, req *http.Request) (*http.Response, string) {
