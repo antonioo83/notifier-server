@@ -15,8 +15,10 @@ import (
 )
 
 type RouteParameters struct {
-	Config         config.Config
-	UserRepository interfaces.UserRepository
+	Config             config.Config
+	UserRepository     interfaces.UserRepository
+	ResourceRepository interfaces.ResourceRepository
+	MessageRepository  interfaces.MessageRepository
 }
 
 func GetRouters(uh *auth.UserAuthService, p RouteParameters) *chi.Mux {
@@ -56,6 +58,14 @@ func GetRouters(uh *auth.UserAuthService, p RouteParameters) *chi.Mux {
 	r = getDeleteUserRoute(r, params)
 	r = getUserRoute(r, params)
 	r = getUsersRoute(r, params)
+
+	var messParams = services.MessageRouteParameters{
+		Config:             p.Config,
+		UserRepository:     p.UserRepository,
+		ResourceRepository: p.ResourceRepository,
+		MessageRepository:  p.MessageRepository,
+	}
+	r = getCreateMessagesRoute(r, messParams)
 
 	return r
 }

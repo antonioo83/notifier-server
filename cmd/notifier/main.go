@@ -26,11 +26,15 @@ func main() {
 	defer pool.Close()
 
 	userRepository := factory.NewUserRepository(context, pool)
+	resourceRepository := factory.NewResourceRepository(context, pool)
+	messageRepository := factory.NewMessageRepository(context, pool)
 	userAuthHandler := factory2.NewUserAuthHandler(userRepository, config)
 	routeParameters :=
 		server.RouteParameters{
-			Config:         config,
-			UserRepository: userRepository,
+			Config:             config,
+			UserRepository:     userRepository,
+			ResourceRepository: resourceRepository,
+			MessageRepository:  messageRepository,
 		}
 
 	handler := server.GetRouters(userAuthHandler, routeParameters)
