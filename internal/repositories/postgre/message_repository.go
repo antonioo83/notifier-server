@@ -23,9 +23,11 @@ func (u messageRepository) Save(model models.Message) error {
 	err := u.connection.QueryRow(
 		u.context,
 		`INSERT INTO ns_messages(code, user_id, resource_id, command, priority, content, is_sent, attempt_count, 
-				is_sent_callback, callback_attempt_count, description, send_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+				is_sent_callback, callback_attempt_count, description, send_at, success_http_status,
+               success_response) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
 		&model.Code, &model.UserId, &model.ResourceId, &model.Command, &model.Priority, &model.Content, &model.IsSent,
 		&model.AttemptCount, &model.IsSentCallback, &model.CallbackAttemptCount, &model.Description, &model.SendAt,
+		&model.SuccessHttpStatus, &model.SuccessResponse,
 	).Scan(&lastInsertId)
 	if err != nil {
 		return err
@@ -51,12 +53,14 @@ func (u messageRepository) Update(model models.Message) error {
                callback_attempt_count=$9, 
                description=$10, 
                send_at=$11, 
+               success_http_status=$12,
+               success_response=$13
                updated_at=NOW() 
              WHERE 
-               code=$12 AND deleted_at IS NULL`,
+               code=$14 AND deleted_at IS NULL`,
 		&model.UserId, &model.ResourceId, &model.Command, &model.Priority, &model.Content, &model.IsSent,
 		&model.AttemptCount, &model.IsSentCallback, &model.CallbackAttemptCount, &model.Description, &model.SendAt,
-		&model.Code,
+		&model.SuccessHttpStatus, &model.SuccessResponse, &model.Code,
 	)
 	if err != nil {
 		return err
@@ -76,16 +80,17 @@ func (u messageRepository) FindByCode(code string) (*models.Message, error) {
 	err := u.connection.QueryRow(
 		u.context,
 		`SELECT r.url, m.id, m.code, m.user_id, m.resource_id, m.command, m.priority, m.content, m.is_sent, m.attempt_count, 
-				m.is_sent_callback, m.callback_attempt_count, m.description, m.send_at, m.created_at 
+				m.is_sent_callback, m.callback_attempt_count, m.description, m.send_at, m.success_http_status, 
+                m.success_response, m.created_at 
              FROM 
                ns_messages m
              LEFT JOIN ns_resources r ON r.id=m.resource_id 
              WHERE 
-               code=$1 AND deleted_at IS NULL`,
+               m.code=$1 AND m.deleted_at IS NULL`,
 		code,
 	).Scan(&model.Resource.URL, &model.ID, &model.Code, &model.UserId, &model.ResourceId, &model.Command, &model.Priority,
 		&model.Content, &model.IsSent, &model.AttemptCount, &model.IsSentCallback, &model.CallbackAttemptCount,
-		&model.Description, &model.SendAt, &model.CreatedAt)
+		&model.Description, &model.SendAt, &model.SuccessHttpStatus, &model.SuccessResponse, &model.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
@@ -99,7 +104,8 @@ func (u messageRepository) FindAll(limit int, offset int) (*map[int]models.Messa
 	rows, err := u.connection.Query(
 		u.context,
 		`SELECT r.url, m.id, m.code, m.user_id, m.resource_id, m.command, m.priority, m.content, m.is_sent, m.attempt_count, 
-				m.is_sent_callback, m.callback_attempt_count, m.description, m.send_at, m.created_at 
+				m.is_sent_callback, m.callback_attempt_count, m.description, m.send_at, m.success_http_status, m.success_response, 
+                m.created_at 
              FROM 
                ns_messages m
              LEFT JOIN ns_resources r ON r.id=m.resource_id 
@@ -129,7 +135,7 @@ func getMessageModels(rows pgx.Rows) (map[int]models.Message, error) {
 		err := rows.Scan(
 			&model.Resource.URL, &model.ID, &model.Code, &model.UserId, &model.ResourceId, &model.Command, &model.Priority,
 			&model.Content, &model.IsSent, &model.AttemptCount, &model.IsSentCallback, &model.CallbackAttemptCount,
-			&model.Description, &model.SendAt, &model.CreatedAt,
+			&model.Description, &model.SendAt, &model.SuccessHttpStatus, &model.SuccessResponse, &model.CreatedAt,
 		)
 		if err != nil {
 			return nil, err

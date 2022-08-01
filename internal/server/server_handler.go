@@ -66,6 +66,8 @@ func GetRouters(uh *auth.UserAuthService, p RouteParameters) *chi.Mux {
 		MessageRepository:  p.MessageRepository,
 	}
 	r = getCreateMessagesRoute(r, messParams)
+	r = getDeleteMessageRoute(r, messParams)
+	r = getMessageRoute(r, messParams)
 
 	return r
 }

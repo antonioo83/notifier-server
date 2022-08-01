@@ -9,23 +9,23 @@ import (
 
 func getCreateMessagesRoute(r *chi.Mux, params services.MessageRouteParameters) *chi.Mux {
 	r.Post("/api/v1/messages", func(w http.ResponseWriter, r *http.Request) {
-		handlers.GetCreateMessageHandler(r, w, params)
+		handlers.CreateMessageHandler(r, w, params)
 	})
 
 	return r
 }
 
-func getDeleteMessageRoute(r *chi.Mux, params services.UserRouteParameters) *chi.Mux {
+func getDeleteMessageRoute(r *chi.Mux, params services.MessageRouteParameters) *chi.Mux {
 	r.Delete("/api/v1/messages", func(w http.ResponseWriter, r *http.Request) {
-		handlers.GetDeletedUserResponse(r, w, params)
+		handlers.DeletedMessageHandler(r, w, params)
 	})
 
 	return r
 }
 
-func getMessageRoute(r *chi.Mux, params services.UserRouteParameters) *chi.Mux {
+func getMessageRoute(r *chi.Mux, params services.MessageRouteParameters) *chi.Mux {
 	r.Get("/api/v1/message", func(w http.ResponseWriter, r *http.Request) {
-		handlers.GetUserResponse(r, w, params)
+		handlers.GetMessageHandler(r, w, params)
 	})
 
 	return r

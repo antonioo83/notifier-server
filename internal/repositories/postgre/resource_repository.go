@@ -22,8 +22,8 @@ func (r resourceRepository) Save(resource models.Resource) (int, error) {
 	var lastInsertId int
 	err := r.connection.QueryRow(
 		r.context,
-		"INSERT INTO ns_resources(code, user_id, url, description, created_at)VALUES ($1, $2, $3, $4, $5) RETURNING id",
-		&resource.Code, &resource.UserId, &resource.URL, &resource.Description, &resource.CreatedAt,
+		"INSERT INTO ns_resources(code, user_id, url, description)VALUES ($1, $2, $3, $4) RETURNING id",
+		&resource.Code, &resource.UserId, &resource.URL, &resource.Description,
 	).Scan(&lastInsertId)
 	if err != nil {
 		return 0, err
