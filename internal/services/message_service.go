@@ -62,7 +62,11 @@ func CreateMessages(userAuth auth.UserAuth, messageRequests []MessageCreateReque
 			return nil, fmt.Errorf("this message already exist: %w", err)
 		}
 
-		hash := getHash(messageRequest.URL)
+		hash, err := getHash(messageRequest.URL)
+		if err != nil {
+			return nil, fmt.Errorf("can't generate hash by resource url: %w", err)
+		}
+
 		resource, err := param.ResourceRepository.FindByCode(int(hash))
 		if err != nil {
 			return nil, fmt.Errorf("can't get resource from the database: %w", err)
@@ -108,10 +112,13 @@ func CreateMessages(userAuth auth.UserAuth, messageRequests []MessageCreateReque
 	return responses, nil
 }
 
-func getHash(s string) uint32 {
+func getHash(s string) (uint32, error) {
 	h := fnv.New32()
-	h.Write([]byte(s))
-	return h.Sum32()
+	_, err := h.Write([]byte(s))
+	if err != nil {
+		return 0, fmt.Errorf("can't generate hash: %w", err)
+	}
+	return h.Sum32(), nil
 }
 
 type MessageDeleteRequest struct {
