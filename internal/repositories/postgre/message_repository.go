@@ -18,6 +18,45 @@ func NewMessageRepository(context context.Context, pool *pgxpool.Pool) interface
 	return &messageRepository{context, pool}
 }
 
+func (u messageRepository) MarkSent(code string) error {
+	_, err := u.connection.Exec(
+		u.context,
+		`UPDATE 
+               ns_messages 
+             SET 
+               is_sent=True,
+               updated_at=NOW() 
+             WHERE 
+               code=$1 AND deleted_at IS NULL`,
+		code,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u messageRepository) MarkUnSent(code string, attemptCount int) error {
+	_, err := u.connection.Exec(
+		u.context,
+		`UPDATE 
+               ns_messages 
+             SET 
+               is_sent=False,
+               attempt_count=$1,
+               updated_at=NOW() 
+             WHERE 
+               code=$2 AND deleted_at IS NULL`,
+		attemptCount, code,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (u messageRepository) Save(model models.Message) error {
 	var lastInsertId int
 	err := u.connection.QueryRow(
@@ -103,15 +142,16 @@ func (u messageRepository) FindByCode(code string) (*models.Message, error) {
 func (u messageRepository) FindAll(limit int, offset int) (*map[int]models.Message, error) {
 	rows, err := u.connection.Query(
 		u.context,
-		`SELECT r.url, m.id, m.code, m.user_id, m.resource_id, m.command, m.priority, m.content, m.is_sent, m.attempt_count, 
+		`SELECT r.id, r.url, r.code, m.id, m.code, m.user_id, m.resource_id, m.command, m.priority, m.content, m.is_sent, m.attempt_count, 
 				m.is_sent_callback, m.callback_attempt_count, m.description, m.send_at, m.success_http_status, m.success_response, 
-                m.created_at 
+                m.created_at, u.id, u.code, u.role, u.title, u.auth_token 
              FROM 
                ns_messages m
              LEFT JOIN ns_resources r ON r.id=m.resource_id 
+             LEFT JOIN ns_users u ON u.id=m.user_id 
              WHERE 
-  				m.deleted_at IS NULL 
-			ORDER BY m.id ASC
+  				m.is_sent IS False AND m.deleted_at IS NULL AND m.attempt_count<=3
+			ORDER BY m.created_at DESC, m.attempt_count ASC
 			LIMIT $1 OFFSET $2`,
 		limit, offset,
 	)
@@ -132,14 +172,17 @@ func getMessageModels(rows pgx.Rows) (map[int]models.Message, error) {
 	for rows.Next() {
 		var model models.Message
 		model.Resource = models.Resource{}
+		model.User = models.User{}
 		err := rows.Scan(
-			&model.Resource.URL, &model.ID, &model.Code, &model.UserId, &model.ResourceId, &model.Command, &model.Priority,
+			&model.Resource.ID, &model.Resource.URL, &model.Resource.Code, &model.ID, &model.Code, &model.UserId, &model.ResourceId, &model.Command, &model.Priority,
 			&model.Content, &model.IsSent, &model.AttemptCount, &model.IsSentCallback, &model.CallbackAttemptCount,
 			&model.Description, &model.SendAt, &model.SuccessHttpStatus, &model.SuccessResponse, &model.CreatedAt,
+			&model.User.ID, &model.User.Code, &model.User.Role, &model.User.Title, &model.User.AuthToken,
 		)
 		if err != nil {
 			return nil, err
 		}
+		model.Resource.UserId = model.User.ID
 		messages[model.ID] = model
 	}
 
