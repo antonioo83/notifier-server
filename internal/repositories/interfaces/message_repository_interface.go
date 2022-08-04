@@ -7,7 +7,7 @@ type MessageRepository interface {
 	Update(model models.Message) error
 	Delete(code string) error
 	FindByCode(code string) (*models.Message, error)
-	FindAll(limit int, offset int) (*map[int]models.Message, error)
+	FindAll(attemptCountMax int, limit int, offset int) (*map[int]models.Message, error)
 	MarkSent(code string) error
 	MarkUnSent(code string, attemptCount int) error
 	IsInDatabase(code string) (bool, error)

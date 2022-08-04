@@ -139,7 +139,7 @@ func (u messageRepository) FindByCode(code string) (*models.Message, error) {
 	return &model, nil
 }
 
-func (u messageRepository) FindAll(limit int, offset int) (*map[int]models.Message, error) {
+func (u messageRepository) FindAll(attemptCountMax int, limit int, offset int) (*map[int]models.Message, error) {
 	rows, err := u.connection.Query(
 		u.context,
 		`SELECT r.id, r.url, r.code, m.id, m.code, m.user_id, m.resource_id, m.command, m.priority, m.content, m.is_sent, m.attempt_count, 
@@ -150,10 +150,10 @@ func (u messageRepository) FindAll(limit int, offset int) (*map[int]models.Messa
              LEFT JOIN ns_resources r ON r.id=m.resource_id 
              LEFT JOIN ns_users u ON u.id=m.user_id 
              WHERE 
-  				m.is_sent IS False AND m.deleted_at IS NULL AND m.attempt_count<=3
+  				m.is_sent IS False AND m.deleted_at IS NULL AND m.attempt_count<=$1 AND m.send_at >= NOW()
 			ORDER BY m.created_at DESC, m.attempt_count ASC
-			LIMIT $1 OFFSET $2`,
-		limit, offset,
+			LIMIT $2 OFFSET $3`,
+		attemptCountMax, limit, offset,
 	)
 	if err != nil {
 		return nil, err
