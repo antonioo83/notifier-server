@@ -5,6 +5,7 @@ import (
 	"github.com/antonioo83/notifier-server/config"
 	"github.com/antonioo83/notifier-server/internal/repositories/factory"
 	"github.com/antonioo83/notifier-server/internal/server"
+	"github.com/antonioo83/notifier-server/internal/services"
 	factory2 "github.com/antonioo83/notifier-server/internal/services/auth/factory"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
@@ -28,6 +29,7 @@ func main() {
 	userRepository := factory.NewUserRepository(context, pool)
 	resourceRepository := factory.NewResourceRepository(context, pool)
 	messageRepository := factory.NewMessageRepository(context, pool)
+	journalRepository := factory.NewJournalRepository(context, pool)
 	userAuthHandler := factory2.NewUserAuthHandler(userRepository, config)
 	routeParameters :=
 		server.RouteParameters{
@@ -36,6 +38,9 @@ func main() {
 			ResourceRepository: resourceRepository,
 			MessageRepository:  messageRepository,
 		}
+
+	senderService := services.NewMessageSenderService(config, messageRepository, journalRepository)
+	senderService.Run()
 
 	handler := server.GetRouters(userAuthHandler, routeParameters)
 	log.Fatal(http.ListenAndServe(config.ServerAddress, handler))

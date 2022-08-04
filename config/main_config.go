@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/caarlos0/env/v6"
+	"time"
 )
 
 type Config struct {
@@ -14,10 +15,18 @@ type Config struct {
 	RequestTimeoutSec int64
 	Auth              Auth
 	Callback          Callback
+	Sender            Sender
 }
 
 type Auth struct {
 	AdminAuthToken string
+}
+
+type Sender struct {
+	ItemCount    int
+	MaxAttempts  int
+	Timeout      time.Duration
+	LoadInterval time.Duration
 }
 
 type Callback struct {
@@ -37,6 +46,10 @@ func GetConfigSettings() (Config, error) {
 		CallbackMaxAttempts     = 3
 		CallbackLimitUnitOfTime = 50
 		CallbackCronSpec        = "1 * * * * *"
+		SenderItemCount         = 10
+		SenderMaxAttempts       = 3
+		SenderTimeout           = time.Second * 3
+		SenderLoadInterval      = time.Second * 7
 	)
 
 	err := env.Parse(&cfg)
@@ -65,6 +78,11 @@ func GetConfigSettings() (Config, error) {
 	cfg.Callback.MaxAttempts = CallbackMaxAttempts
 	cfg.Callback.LimitUnitOfTime = CallbackLimitUnitOfTime
 	cfg.Callback.CronSpec = CallbackCronSpec
+
+	cfg.Sender.ItemCount = SenderItemCount
+	cfg.Sender.MaxAttempts = SenderMaxAttempts
+	cfg.Sender.Timeout = SenderTimeout
+	cfg.Sender.LoadInterval = SenderLoadInterval
 
 	return cfg, nil
 }
