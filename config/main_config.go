@@ -1,9 +1,12 @@
 package config
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/antonioo83/notifier-server/internal/utils"
 	"github.com/caarlos0/env/v6"
+	"os"
 	"time"
 )
 
@@ -13,6 +16,9 @@ type Config struct {
 	DatabaseDsn       string `env:"DATABASE_DSN"`
 	FilepathToDBDump  string
 	RequestTimeoutSec int64
+	EnableHTTPS       bool   `env:"ENABLE_HTTPS" json:"enable_https,omitempty"` // Enable HTTPS connection.
+	ConfigFilePath    string `env:"CONFIG" json:"config_file_path,omitempty"`   // Filename of the server configurations.
+	ServerType        string `env:"SERVER_TYPE" json:"server_type,omitempty"`
 	Auth              Auth
 	Callback          Callback
 	Sender            Sender
@@ -37,7 +43,12 @@ type Callback struct {
 
 var cfg Config
 
-func GetConfigSettings() (Config, error) {
+const (
+	HTTPServer = "http"
+	GRPCServer = "grpc"
+)
+
+func GetConfigSettings(configFromFile *Config) (Config, error) {
 	const (
 		ServerAddress           = ":8080"
 		DatabaseDSN             = "postgres://postgres:433370@localhost:5432/notifier_server"
@@ -61,6 +72,24 @@ func GetConfigSettings() (Config, error) {
 	flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "Base address of the result short url")
 	flag.StringVar(&cfg.DatabaseDsn, "d", cfg.DatabaseDsn, "Database port")
 	flag.Parse()
+	if configFromFile != nil {
+		if cfg.ServerAddress == "" {
+			cfg.ServerAddress = configFromFile.ServerAddress
+		}
+		if cfg.BaseURL == "" {
+			cfg.BaseURL = configFromFile.BaseURL
+		}
+		if cfg.DatabaseDsn == "" {
+			cfg.DatabaseDsn = configFromFile.DatabaseDsn
+		}
+		if !cfg.EnableHTTPS {
+			cfg.EnableHTTPS = configFromFile.EnableHTTPS
+		}
+		if cfg.ServerType == "" {
+			cfg.ServerType = configFromFile.ServerType
+		}
+	}
+
 	if cfg.ServerAddress == "" {
 		cfg.ServerAddress = ServerAddress
 	}
@@ -85,4 +114,34 @@ func GetConfigSettings() (Config, error) {
 	cfg.Sender.LoadInterval = SenderLoadInterval
 
 	return cfg, nil
+}
+
+// LoadConfigFile this method read a server configurations from a file in the json format.
+func LoadConfigFile(configFilePath string) (*Config, error) {
+	var configFromFile Config
+
+	file, err := os.OpenFile(configFilePath, os.O_RDONLY, 0777)
+	if err != nil {
+		return nil, fmt.Errorf("unable to open a configuration file: %w", err)
+	}
+	defer utils.ResourceClose(file)
+
+	info, err := file.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get statistic info about configuration file: %w", err)
+	}
+	filesize := info.Size()
+	jsonConfig := make([]byte, filesize)
+
+	_, err = file.Read(jsonConfig)
+	if err != nil {
+		return nil, fmt.Errorf("i can't read a configuration file: %w", err)
+	}
+
+	err = json.Unmarshal(jsonConfig, &configFromFile)
+	if err != nil {
+		return nil, fmt.Errorf("i can't parse a configuration json file: %w", err)
+	}
+
+	return &configFromFile, nil
 }

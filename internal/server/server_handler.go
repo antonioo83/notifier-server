@@ -19,6 +19,7 @@ type RouteParameters struct {
 	UserRepository     interfaces.UserRepository
 	ResourceRepository interfaces.ResourceRepository
 	MessageRepository  interfaces.MessageRepository
+	JournalRepository  interfaces.JournalRepository
 }
 
 func GetRouters(uh *auth.UserAuthService, p RouteParameters) *chi.Mux {

@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package grpc;
+
+option go_package = "server/grpc/proto";
+
+message MessageCreateRequest {
+  string MessageId = 1;
+  string  Priority = 2;
+  string  URL = 3;
+  string  Command = 4;
+  string  Content = 5;
+  string  SendAt = 6;
+  int32  SuccessHttpStatus = 7;
+  string  SuccessResponse = 8;
+  string Description = 9;
+  bool IsSendNotReceivedNotify = 10;
+}
+
+message MessagesCreateRequest {
+  string UserToken = 1;
+  repeated MessageCreateRequest Items = 2;
+}
+
+message MessagesCreateResponse {
+  int32  Status = 1;
+  string  Message = 2;
+}
+
+message MessageDeleteRequest {
+  string UserToken = 1;
+  string MessageId = 2;
+}
+
+message MessageDeleteResponse {
+  int32   Status = 1;
+  string  Message = 2;
+}
+
+message MessageGetRequest {
+  string UserToken = 1;
+  string MessageId = 2;
+}
+
+message MessageGetResponse {
+  string MessageId = 1;
+  string  Priority = 2;
+  string  Url = 3;
+  string  Command = 4;
+  string  Content = 5;
+  string  SendAt = 6;
+  int32  SuccessHttpStatus = 7;
+  string  SuccessResponse = 8;
+  string Description = 9;
+  bool IsSendNotReceivedNotify = 10;
+  string CreatedAt = 11;
+}
+
+service Message {
+  rpc CreateMessages(MessagesCreateRequest) returns (MessagesCreateResponse);
+  rpc DeleteMessage(MessageDeleteRequest) returns (MessageDeleteResponse);
+  rpc GetMessage(MessageGetRequest) returns (MessageGetResponse);
+}

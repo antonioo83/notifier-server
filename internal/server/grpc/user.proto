@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package grpc;
+
+option go_package = "server/grpc/proto";
+
+message UserCreateRequest {
+  string UserId = 1;
+  string  Role = 2;
+  string Title = 3;
+  string Description = 4;
+}
+
+message UserCreateResponse {
+  int32  Status = 1;
+  string  Message = 2;
+  string Token = 3;
+}
+
+message UserUpdateRequest {
+  string UserId = 1;
+  string  Role = 2;
+  string Title = 3;
+  string Description = 4;
+}
+
+message UserUpdateResponse {
+  int32  Status = 1;
+  string  Message = 2;
+  string Token = 3;
+}
+
+message UserDeleteRequest {
+  string UserId = 1;
+}
+
+message UserDeleteResponse {
+  int32  Status = 1;
+  string  Message = 2;
+}
+
+message UserGetRequest {
+  string UserId = 1;
+}
+
+message UserGetResponse {
+  string UserId = 1;
+  string Role = 2;
+  string Title = 3;
+  string Description = 4;
+}
+
+message UsersGetRequest {
+  repeated string UserIds = 1;
+}
+
+message UserGetResponses {
+  repeated UserGetResponse items = 1;
+}
+
+service User {
+  rpc Create(UserCreateRequest) returns (UserCreateResponse);
+  rpc Update(UserUpdateRequest) returns (UserUpdateResponse);
+  rpc Delete(UserDeleteRequest) returns (UserDeleteResponse);
+  rpc GetUser(UserGetRequest) returns (UserGetResponse);
+  rpc GetUsers(UsersGetRequest) returns (UserGetResponses);
+}
