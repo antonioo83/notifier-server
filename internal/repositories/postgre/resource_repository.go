@@ -18,6 +18,7 @@ func NewResourceRepository(context context.Context, pool *pgxpool.Pool) interfac
 	return &resourceRepository{context, pool}
 }
 
+// Save creates a resource in the database.
 func (r resourceRepository) Save(resource models.Resource) (int, error) {
 	var lastInsertId int
 	err := r.connection.QueryRow(
@@ -32,12 +33,14 @@ func (r resourceRepository) Save(resource models.Resource) (int, error) {
 	return lastInsertId, err
 }
 
+// Delete deletes a resource from the database.
 func (r resourceRepository) Delete(code int) error {
 	_, err := r.connection.Exec(r.context, "UPDATE ns_resources SET deleted_at=NOW() WHERE code=$1 AND deleted_at IS NULL", code)
 
 	return err
 }
 
+// FindByCode find a resource by code.
 func (r resourceRepository) FindByCode(code int) (*models.Resource, error) {
 	var model models.Resource
 	err := r.connection.QueryRow(
@@ -54,6 +57,7 @@ func (r resourceRepository) FindByCode(code int) (*models.Resource, error) {
 	return &model, nil
 }
 
+// IsInDatabase a resource exists in the database.
 func (r resourceRepository) IsInDatabase(code int) (bool, error) {
 	model, err := r.FindByCode(code)
 

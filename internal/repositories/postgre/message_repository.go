@@ -18,6 +18,7 @@ func NewMessageRepository(context context.Context, pool *pgxpool.Pool) interface
 	return &messageRepository{context, pool}
 }
 
+// MarkSent mark a message as sent.
 func (u messageRepository) MarkSent(code string) error {
 	_, err := u.connection.Exec(
 		u.context,
@@ -37,6 +38,7 @@ func (u messageRepository) MarkSent(code string) error {
 	return nil
 }
 
+// MarkUnSent mark a message as not sent.
 func (u messageRepository) MarkUnSent(code string, attemptCount int) error {
 	_, err := u.connection.Exec(
 		u.context,
@@ -57,6 +59,7 @@ func (u messageRepository) MarkUnSent(code string, attemptCount int) error {
 	return nil
 }
 
+// Save create a message in the database.
 func (u messageRepository) Save(model models.Message) error {
 	var lastInsertId int
 	err := u.connection.QueryRow(
@@ -75,6 +78,7 @@ func (u messageRepository) Save(model models.Message) error {
 	return err
 }
 
+// Update modify a message in the database.
 func (u messageRepository) Update(model models.Message) error {
 	_, err := u.connection.Exec(
 		u.context,
@@ -108,12 +112,14 @@ func (u messageRepository) Update(model models.Message) error {
 	return nil
 }
 
+// Delete delete a message in the database.
 func (u messageRepository) Delete(code string) error {
 	_, err := u.connection.Exec(u.context, "UPDATE ns_messages SET deleted_at=NOW() WHERE code=$1 AND deleted_at IS NULL", code)
 
 	return err
 }
 
+// FindByCode find a message by code.
 func (u messageRepository) FindByCode(code string) (*models.Message, error) {
 	var model models.Message
 	err := u.connection.QueryRow(
@@ -139,6 +145,7 @@ func (u messageRepository) FindByCode(code string) (*models.Message, error) {
 	return &model, nil
 }
 
+// FindAll find messages by limit and offset.
 func (u messageRepository) FindAll(attemptCountMax int, limit int, offset int) (*map[int]models.Message, error) {
 	rows, err := u.connection.Query(
 		u.context,
@@ -189,6 +196,7 @@ func getMessageModels(rows pgx.Rows) (map[int]models.Message, error) {
 	return messages, nil
 }
 
+// IsInDatabase a message exists in the database.
 func (u messageRepository) IsInDatabase(code string) (bool, error) {
 	model, err := u.FindByCode(code)
 

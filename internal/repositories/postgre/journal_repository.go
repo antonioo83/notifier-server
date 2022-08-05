@@ -16,6 +16,7 @@ func NewJournalRepository(context context.Context, pool *pgxpool.Pool) interface
 	return &journalRepository{context, pool}
 }
 
+// Save creates a user in the database.
 func (j journalRepository) Save(journal models.Journal) error {
 	var lastInsertId int
 	err := j.connection.QueryRow(

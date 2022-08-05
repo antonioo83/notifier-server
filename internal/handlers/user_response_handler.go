@@ -10,7 +10,8 @@ import (
 	"strconv"
 )
 
-func GetCreatedUserResponse(r *http.Request, w http.ResponseWriter, param services.UserRouteParameters) {
+// CreatedUserHandler user create handler.
+func CreatedUserHandler(r *http.Request, w http.ResponseWriter, param services.UserRouteParameters) {
 	httpRequest, err := getRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -38,6 +39,7 @@ func GetCreatedUserResponse(r *http.Request, w http.ResponseWriter, param servic
 	utils.LogErr(w.Write(jsonResponse))
 }
 
+// getJSONResponse returns json response.
 func getJSONResponse(key string, value string) ([]byte, error) {
 	resp := make(map[string]string)
 	resp[key] = value
@@ -49,6 +51,7 @@ func getJSONResponse(key string, value string) ([]byte, error) {
 	return jsonResp, nil
 }
 
+// getRequest returns request by json request.
 func getRequest(r *http.Request) (*services.UserCreateRequest, error) {
 	var request services.UserCreateRequest
 	decoder := json.NewDecoder(r.Body)
@@ -60,7 +63,8 @@ func getRequest(r *http.Request) (*services.UserCreateRequest, error) {
 	return &request, nil
 }
 
-func GetUpdatedUserResponse(r *http.Request, w http.ResponseWriter, param services.UserRouteParameters) {
+// UpdatedUserHandler user update handler.
+func UpdatedUserHandler(r *http.Request, w http.ResponseWriter, param services.UserRouteParameters) {
 	httpRequest, err := getRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -88,7 +92,8 @@ func GetUpdatedUserResponse(r *http.Request, w http.ResponseWriter, param servic
 	utils.LogErr(w.Write(jsonResponse))
 }
 
-func GetDeletedUserResponse(r *http.Request, w http.ResponseWriter, param services.UserRouteParameters) {
+// DeletedUserHandler user delete handler.
+func DeletedUserHandler(r *http.Request, w http.ResponseWriter, param services.UserRouteParameters) {
 	httpRequest, err := getDeleteRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -110,6 +115,7 @@ func GetDeletedUserResponse(r *http.Request, w http.ResponseWriter, param servic
 	w.WriteHeader(http.StatusAccepted)
 }
 
+// getDeleteRequest returns request for the delete a user.
 func getDeleteRequest(r *http.Request) (*services.UserDeleteRequest, error) {
 	var request services.UserDeleteRequest
 	decoder := json.NewDecoder(r.Body)
@@ -121,7 +127,8 @@ func getDeleteRequest(r *http.Request) (*services.UserDeleteRequest, error) {
 	return &request, nil
 }
 
-func GetUserResponse(r *http.Request, w http.ResponseWriter, param services.UserRouteParameters) {
+// GetUserHandler user get handler.
+func GetUserHandler(r *http.Request, w http.ResponseWriter, param services.UserRouteParameters) {
 	httpRequest := getUserRequest(r)
 	response, err := services.GetUser(*httpRequest, param)
 	if err != nil {
@@ -147,6 +154,7 @@ func GetUserResponse(r *http.Request, w http.ResponseWriter, param services.User
 	utils.LogErr(w.Write(jsonResponse))
 }
 
+// getUserRequest returns request for get a user.
 func getUserRequest(r *http.Request) *services.UserGetRequest {
 	var request services.UserGetRequest
 	request.UserId = r.URL.Query().Get("userId")
@@ -154,6 +162,7 @@ func getUserRequest(r *http.Request) *services.UserGetRequest {
 	return &request
 }
 
+// getUserJsonResponse returns a response in json format.
 func getUserJsonResponse(resp services.UserResponse) ([]byte, error) {
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
@@ -163,7 +172,8 @@ func getUserJsonResponse(resp services.UserResponse) ([]byte, error) {
 	return jsonResp, nil
 }
 
-func GetUsersResponse(r *http.Request, w http.ResponseWriter, param services.UserRouteParameters) {
+// GetUsersHandler users get handler.
+func GetUsersHandler(r *http.Request, w http.ResponseWriter, param services.UserRouteParameters) {
 	httpRequest, err := getUsersRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -191,6 +201,7 @@ func GetUsersResponse(r *http.Request, w http.ResponseWriter, param services.Use
 	utils.LogErr(w.Write(jsonResponse))
 }
 
+// getUsersRequest returns request for get users.
 func getUsersRequest(r *http.Request) (*services.UsersGetRequest, error) {
 	var err error
 	var request services.UsersGetRequest
@@ -210,6 +221,7 @@ func getUsersRequest(r *http.Request) (*services.UsersGetRequest, error) {
 	return &request, nil
 }
 
+// getUsersJsonResponse returns a users response in json format.
 func getUsersJsonResponse(resp []services.UserResponse) ([]byte, error) {
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {

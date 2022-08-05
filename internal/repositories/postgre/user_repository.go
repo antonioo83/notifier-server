@@ -18,6 +18,7 @@ func NewUserRepository(context context.Context, pool *pgxpool.Pool) interfaces.U
 	return &userRepository{context, pool}
 }
 
+// Save creates a user in the database.
 func (u userRepository) Save(user models.User) error {
 	var lastInsertId int
 	err := u.connection.QueryRow(
@@ -32,6 +33,7 @@ func (u userRepository) Save(user models.User) error {
 	return err
 }
 
+// Update updates a user in the database.
 func (u userRepository) Update(model models.User) error {
 	_, err := u.connection.Exec(
 		u.context,
@@ -45,12 +47,14 @@ func (u userRepository) Update(model models.User) error {
 	return nil
 }
 
+// Delete deletes a user in the database.
 func (u userRepository) Delete(code string) error {
 	_, err := u.connection.Exec(u.context, "UPDATE ns_users SET deleted_at=NOW() WHERE code=$1 AND deleted_at IS NULL", code)
 
 	return err
 }
 
+// FindByCode finds a user in the database by code.
 func (u userRepository) FindByCode(code string) (*models.User, error) {
 	var model models.User
 	err := u.connection.QueryRow(
@@ -67,6 +71,7 @@ func (u userRepository) FindByCode(code string) (*models.User, error) {
 	return &model, nil
 }
 
+// FindByToken finds a user in the database by token.
 func (u userRepository) FindByToken(code string) (*models.User, error) {
 	var model models.User
 	err := u.connection.QueryRow(
@@ -83,6 +88,7 @@ func (u userRepository) FindByToken(code string) (*models.User, error) {
 	return &model, nil
 }
 
+// FindAll finds users in the database by limit and offset.
 func (u userRepository) FindAll(limit int, offset int) (*map[int]models.User, error) {
 	rows, err := u.connection.Query(
 		u.context,
@@ -107,6 +113,7 @@ func (u userRepository) FindAll(limit int, offset int) (*map[int]models.User, er
 	return &users, nil
 }
 
+// getModels returns array of the user models.
 func getModels(rows pgx.Rows) (map[int]models.User, error) {
 	var users = make(map[int]models.User)
 	var model models.User
@@ -135,6 +142,7 @@ func getModels(rows pgx.Rows) (map[int]models.User, error) {
 	return users, nil
 }
 
+// IsInDatabase user is exists in the database.
 func (u userRepository) IsInDatabase(code string) (bool, error) {
 	model, err := u.FindByCode(code)
 

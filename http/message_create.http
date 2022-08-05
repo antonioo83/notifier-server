@@ -4,12 +4,12 @@ Authorization:Bearer 54d1ba805e2a4891aeac9299b618945e
 
 [
   {
-    "messageId": "6371863a-cb98-4847-8d77-c9b1cb983ced",
+    "messageId": "6371863a-cb98-4847-8d77-c9b1cb983ced-5",
     "priority": "normal",
-    "url": "courier.softbalance.ru",
+    "url": "http://api-courier-ireca-feature-test.ireca.site/api/v1/orders/test",
     "command": "post",
     "content": "{\"message\": \"Happy New Year!\"}",
-    "sendAt": "2023-01-01 00:00:01",
+    "sendAt": "",
     "successHttpStatus": 201,
     "successResponse":"{\"resultCode\": 0,\"resultInfo\": \"OK\"}",
     "description": "desc",

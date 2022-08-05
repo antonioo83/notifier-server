@@ -11,34 +11,25 @@ import (
 )
 
 type Config struct {
-	ServerAddress     string `env:"SERVER_ADDRESS"`
-	BaseURL           string `env:"BASE_URL"`
-	DatabaseDsn       string `env:"DATABASE_DSN"`
-	FilepathToDBDump  string
-	RequestTimeoutSec int64
+	ServerAddress     string `env:"SERVER_ADDRESS"`                             // Server address.
+	DatabaseDsn       string `env:"DATABASE_DSN"`                               // Connection string to the database.
+	RequestTimeoutSec int64  `env:"REQUEST_TIMEOUT_SEC"`                        // Timeout value for a request handling of the HTTP server.
 	EnableHTTPS       bool   `env:"ENABLE_HTTPS" json:"enable_https,omitempty"` // Enable HTTPS connection.
 	ConfigFilePath    string `env:"CONFIG" json:"config_file_path,omitempty"`   // Filename of the server configurations.
-	ServerType        string `env:"SERVER_TYPE" json:"server_type,omitempty"`
+	ServerType        string `env:"SERVER_TYPE" json:"server_type,omitempty"`   // Type of the server: GRPS, HTTP
 	Auth              Auth
-	Callback          Callback
 	Sender            Sender
 }
 
 type Auth struct {
-	AdminAuthToken string
+	AdminAuthToken string // Default Administrator token.
 }
 
 type Sender struct {
-	ItemCount    int
-	MaxAttempts  int
-	Timeout      time.Duration
-	LoadInterval time.Duration
-}
-
-type Callback struct {
-	MaxAttempts     uint
-	LimitUnitOfTime uint
-	CronSpec        string
+	ItemCount    int           // Max count request
+	MaxAttempts  int           // Max count attempts sends request to a resource.
+	Timeout      time.Duration // Timeout to get response from a resource.
+	LoadInterval time.Duration // Server will be load messages according to the specified interval.
 }
 
 var cfg Config
@@ -48,19 +39,17 @@ const (
 	GRPCServer = "grpc"
 )
 
+// GetConfigSettings gets configuration settings of the server.
 func GetConfigSettings(configFromFile *Config) (Config, error) {
 	const (
-		ServerAddress           = ":8080"
-		DatabaseDSN             = "postgres://postgres:433370@localhost:5432/notifier_server"
-		RequestTimeoutSec       = 60
-		AdminAuthToken          = "54d1ba805e2a4891aeac9299b618945e"
-		CallbackMaxAttempts     = 3
-		CallbackLimitUnitOfTime = 50
-		CallbackCronSpec        = "1 * * * * *"
-		SenderItemCount         = 10
-		SenderMaxAttempts       = 3
-		SenderTimeout           = time.Second * 3
-		SenderLoadInterval      = time.Second * 7
+		ServerAddress      = ":8080"
+		DatabaseDSN        = "postgres://postgres:433370@localhost:5432/notifier_server"
+		RequestTimeoutSec  = 60
+		AdminAuthToken     = "54d1ba805e2a4891aeac9299b618945e"
+		SenderItemCount    = 10
+		SenderMaxAttempts  = 3
+		SenderTimeout      = time.Second * 3
+		SenderLoadInterval = time.Second * 7
 	)
 
 	err := env.Parse(&cfg)
@@ -69,15 +58,15 @@ func GetConfigSettings(configFromFile *Config) (Config, error) {
 	}
 
 	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "The address of the local server")
-	flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "Base address of the result short url")
 	flag.StringVar(&cfg.DatabaseDsn, "d", cfg.DatabaseDsn, "Database port")
+	flag.Int64Var(&cfg.RequestTimeoutSec, "rt", cfg.RequestTimeoutSec, "Timeout value for a request")
+	flag.BoolVar(&cfg.EnableHTTPS, "e", cfg.EnableHTTPS, "Enable HTTPS")
+	flag.StringVar(&cfg.ConfigFilePath, "c", cfg.ConfigFilePath, "Name of the config file")
+	flag.StringVar(&cfg.ServerType, "s", cfg.ServerType, "Server type")
 	flag.Parse()
 	if configFromFile != nil {
 		if cfg.ServerAddress == "" {
 			cfg.ServerAddress = configFromFile.ServerAddress
-		}
-		if cfg.BaseURL == "" {
-			cfg.BaseURL = configFromFile.BaseURL
 		}
 		if cfg.DatabaseDsn == "" {
 			cfg.DatabaseDsn = configFromFile.DatabaseDsn
@@ -103,10 +92,6 @@ func GetConfigSettings(configFromFile *Config) (Config, error) {
 	}
 
 	cfg.Auth.AdminAuthToken = AdminAuthToken
-
-	cfg.Callback.MaxAttempts = CallbackMaxAttempts
-	cfg.Callback.LimitUnitOfTime = CallbackLimitUnitOfTime
-	cfg.Callback.CronSpec = CallbackCronSpec
 
 	cfg.Sender.ItemCount = SenderItemCount
 	cfg.Sender.MaxAttempts = SenderMaxAttempts

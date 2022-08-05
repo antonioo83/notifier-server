@@ -10,6 +10,7 @@ import (
 	"net/http"
 )
 
+// CreateMessageHandler create a message handler.
 func CreateMessageHandler(r *http.Request, w http.ResponseWriter, param services.MessageRouteParameters) {
 	httpRequests, err := getMessageRequests(r)
 	if err != nil {
@@ -34,6 +35,7 @@ func CreateMessageHandler(r *http.Request, w http.ResponseWriter, param services
 	utils.LogErr(w.Write(jsonResponse))
 }
 
+// getMessageRequests returns a request for create a message.
 func getMessageRequests(r *http.Request) (*[]services.MessageCreateRequest, error) {
 	var requests []services.MessageCreateRequest
 	decoder := json.NewDecoder(r.Body)
@@ -45,6 +47,7 @@ func getMessageRequests(r *http.Request) (*[]services.MessageCreateRequest, erro
 	return &requests, nil
 }
 
+// DeletedMessageHandler Delete message handler.
 func DeletedMessageHandler(r *http.Request, w http.ResponseWriter, param services.MessageRouteParameters) {
 	httpRequest, err := getMessageDeleteRequest(r)
 	if err != nil {
@@ -67,6 +70,7 @@ func DeletedMessageHandler(r *http.Request, w http.ResponseWriter, param service
 	w.WriteHeader(http.StatusAccepted)
 }
 
+// getMessageDeleteRequest returns request for delete a message.
 func getMessageDeleteRequest(r *http.Request) (*services.MessageDeleteRequest, error) {
 	var request services.MessageDeleteRequest
 	decoder := json.NewDecoder(r.Body)
@@ -78,6 +82,7 @@ func getMessageDeleteRequest(r *http.Request) (*services.MessageDeleteRequest, e
 	return &request, nil
 }
 
+// GetMessageHandler get message handler.
 func GetMessageHandler(r *http.Request, w http.ResponseWriter, param services.MessageRouteParameters) {
 	httpRequest := getMessageRequest(r)
 	response, err := services.GetMessage(*httpRequest, param)
@@ -104,6 +109,7 @@ func GetMessageHandler(r *http.Request, w http.ResponseWriter, param services.Me
 	utils.LogErr(w.Write(jsonResponse))
 }
 
+// getMessageRequest returns request for get a message.
 func getMessageRequest(r *http.Request) *services.MessageGetRequest {
 	var request services.MessageGetRequest
 	request.MessageId = r.URL.Query().Get("messageId")
@@ -111,6 +117,7 @@ func getMessageRequest(r *http.Request) *services.MessageGetRequest {
 	return &request
 }
 
+// getMessageJsonResponse converts a response to the json response.
 func getMessageJsonResponse(resp services.MessageResponse) ([]byte, error) {
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
