@@ -49,6 +49,20 @@ func CreateMessages(userAuth auth.UserAuth, messageRequests []MessageCreateReque
 	validate := validator.New()
 	for _, messageRequest := range messageRequests {
 		response := MessageCreateResponse{MessageID: messageRequest.MessageId, Code: ErrorCode}
+		if messageRequest.Priority == "" {
+			messageRequest.Priority = "normal"
+		}
+		if messageRequest.Command == "" {
+			messageRequest.Command = "POST"
+		}
+		if messageRequest.SendAt == "" {
+			now := time.Now()
+			messageRequest.SendAt = now.Format("2006-01-02 15:04:05")
+		}
+		if messageRequest.SuccessHttpStatus == 0 {
+			messageRequest.SuccessHttpStatus = 201
+		}
+
 		err := validate.Struct(messageRequest)
 		if err != nil {
 			return nil, fmt.Errorf("this request has mistake: %w", err)
