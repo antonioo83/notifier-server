@@ -12,13 +12,8 @@ import (
 // sendCmd represents the send command
 var sendCmd = &cobra.Command{
 	Use:   "send",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Sends messages to the notifier server",
+	Long:  `Sends messages to the notifier server. File have to json format`,
 	Run: func(cmd *cobra.Command, args []string) {
 		configFromFile, err := config.LoadClientConfigFile("client_config.json")
 		if err != nil {
@@ -48,5 +43,5 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(sendCmd)
-	sendCmd.PersistentFlags().String("f", "messages.json", "A help for foo")
+	sendCmd.PersistentFlags().String("f", "messages.json", "File path")
 }
