@@ -19,6 +19,8 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -36,19 +38,29 @@ type RequestTest struct {
 func TestGetRouters(t *testing.T) {
 	var pool *pgxpool.Pool
 	context := context.Background()
-	config, err := config.GetConfigSettings()
+
+	configPath, err := GetConfigPath()
+	if err != nil {
+		log.Fatalf("i can't get path to the configuration file:" + err.Error())
+	}
+
+	configFromFile, err := config.LoadConfigFile(configPath)
+	if err != nil {
+		log.Fatalf("i can't load configuration file:" + err.Error())
+	}
+	cfg, err := config.GetConfigSettings(configFromFile)
 	if err != nil {
 		log.Fatalf("Can't read config: %s", err.Error())
 	}
 
-	pool, _ = pgxpool.Connect(context, config.DatabaseDsn)
+	pool, _ = pgxpool.Connect(context, cfg.DatabaseDsn)
 	defer pool.Close()
 
 	userRepository := factory.NewUserRepository(context, pool)
-	userAuthHandler := factory2.NewUserAuthHandler(userRepository, config)
+	userAuthHandler := factory2.NewUserAuthHandler(userRepository, cfg)
 	routeParameters :=
 		RouteParameters{
-			Config:         config,
+			Config:         cfg,
 			UserRepository: userRepository,
 		}
 
@@ -138,7 +150,7 @@ func TestGetRouters(t *testing.T) {
 
 	for _, t1 := range tests {
 		fmt.Println("start test:" + t1.description)
-		createRequest, err := getRequest(t1.url, t1.queryParams, t1.method, strings.NewReader(t1.content), config.Auth.AdminAuthToken)
+		createRequest, err := getRequest(t1.url, t1.queryParams, t1.method, strings.NewReader(t1.content), cfg.Auth.AdminAuthToken)
 		assert.NoError(t, err)
 		resp, respBody := sendRequest(t, createRequest)
 		require.NoError(t, err)
@@ -180,4 +192,13 @@ func sendRequest(t *testing.T, req *http.Request) (*http.Response, string) {
 	defer utils.ResourceClose(resp.Body)
 
 	return resp, string(respBody)
+}
+
+func GetConfigPath() (string, error) {
+	f, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("can't get file config path: %w", err)
+	}
+
+	return filepath.Dir(f) + "/../config.json", nil
 }
