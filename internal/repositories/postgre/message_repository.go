@@ -157,7 +157,7 @@ func (u messageRepository) FindAll(attemptCountMax int, limit int, offset int) (
              LEFT JOIN ns_resources r ON r.id=m.resource_id 
              LEFT JOIN ns_users u ON u.id=m.user_id 
              WHERE 
-  				m.is_sent IS False AND m.deleted_at IS NULL AND m.attempt_count<=$1 AND m.send_at >= NOW()
+  				m.is_sent IS False AND m.deleted_at IS NULL AND m.attempt_count<=$1
 			ORDER BY m.created_at DESC, m.attempt_count ASC
 			LIMIT $2 OFFSET $3`,
 		attemptCountMax, limit, offset,
