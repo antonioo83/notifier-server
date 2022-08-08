@@ -1,0 +1,7 @@
+{
+  "server_address": "localhost:8080",
+  "base_url": "http://localhost",
+  "database_dsn": "postgres://postgres:433370@localhost:5432/postgres",
+  "enable_https": false,
+  "server_type": "http"
+}

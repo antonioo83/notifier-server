@@ -1,0 +1,7 @@
+{
+  "server_address": "http://localhost:8080",
+  "request_timeout_sec": 3,
+  "token": "54d1ba805e2a4891aeac9299b618945e",
+  "send_message_uri": "/api/v1/messages",
+  "status_get_uri": "/api/v1/message"
+}
