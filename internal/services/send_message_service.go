@@ -25,6 +25,7 @@ func NewMessageSenderService(cfg config.Config, rep interfaces.MessageRepository
 	return &sendMessageService{cfg, rep, jRep}
 }
 
+//Run cycle for send messages.
 func (s sendMessageService) Run() {
 	wg := &sync.WaitGroup{}
 	messages, err := s.rep.FindAll(s.cfg.Sender.MaxAttempts, s.cfg.Sender.ItemCount, 0)
@@ -50,6 +51,7 @@ func (s sendMessageService) Run() {
 	log.Println("successful!")
 }
 
+// sendMessage send a message.
 func (s sendMessageService) sendMessage(message models.Message, wg *sync.WaitGroup) {
 	defer func() {
 		wg.Done()
@@ -97,6 +99,7 @@ func (s sendMessageService) sendMessage(message models.Message, wg *sync.WaitGro
 	return
 }
 
+// sendRequest send a request from a message.
 func (s sendMessageService) sendRequest(message models.Message) (status int, content string, err error) {
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {

@@ -35,6 +35,7 @@ type RequestTest struct {
 	description     string
 }
 
+// TestGetRouters test crud actions for users.
 func TestGetRouters(t *testing.T) {
 	var pool *pgxpool.Pool
 	context := context.Background()

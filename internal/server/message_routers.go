@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// getCreateMessagesRoute gets create messages route.
 func getCreateMessagesRoute(r *chi.Mux, params services.MessageRouteParameters) *chi.Mux {
 	r.Post("/api/v1/messages", func(w http.ResponseWriter, r *http.Request) {
 		handlers.CreateMessageHandler(r, w, params)
@@ -15,6 +16,7 @@ func getCreateMessagesRoute(r *chi.Mux, params services.MessageRouteParameters) 
 	return r
 }
 
+// getCreateMessagesRoute gets delete message route.
 func getDeleteMessageRoute(r *chi.Mux, params services.MessageRouteParameters) *chi.Mux {
 	r.Delete("/api/v1/messages", func(w http.ResponseWriter, r *http.Request) {
 		handlers.DeletedMessageHandler(r, w, params)
@@ -23,6 +25,7 @@ func getDeleteMessageRoute(r *chi.Mux, params services.MessageRouteParameters) *
 	return r
 }
 
+// getMessageRoute gets get message route.
 func getMessageRoute(r *chi.Mux, params services.MessageRouteParameters) *chi.Mux {
 	r.Get("/api/v1/message", func(w http.ResponseWriter, r *http.Request) {
 		handlers.GetMessageHandler(r, w, params)

@@ -11,13 +11,13 @@ import (
 	"net/http"
 )
 
-// UserServer поддерживает все необходимые методы сервера.
 type UserServer struct {
 	user_proto.UnimplementedUserServer
 	Config         config.Config
 	UserRepository interfaces.UserRepository
 }
 
+// Create a user by grpc service.
 func (s *UserServer) Create(ctx context.Context, in *user_proto.UserCreateRequest) (*user_proto.UserCreateResponse, error) {
 	response := user_proto.UserCreateResponse{}
 
@@ -44,6 +44,7 @@ func (s *UserServer) Create(ctx context.Context, in *user_proto.UserCreateReques
 	return &response, err
 }
 
+// Update a user by grpc service.
 func (s *UserServer) Update(ctx context.Context, in *user_proto.UserUpdateRequest) (*user_proto.UserUpdateResponse, error) {
 	response := user_proto.UserUpdateResponse{}
 	user, err := s.UserRepository.FindByCode(in.UserId)
@@ -74,6 +75,7 @@ func (s *UserServer) Update(ctx context.Context, in *user_proto.UserUpdateReques
 	return &response, err
 }
 
+// Delete a user by grpc service.
 func (s *UserServer) Delete(ctx context.Context, in *user_proto.UserDeleteRequest) (*user_proto.UserDeleteResponse, error) {
 	response := user_proto.UserDeleteResponse{}
 	user, err := s.UserRepository.FindByCode(in.UserId)
@@ -103,6 +105,7 @@ func (s *UserServer) Delete(ctx context.Context, in *user_proto.UserDeleteReques
 	return &response, err
 }
 
+// GetUser gets a user by grpc service.
 func (s *UserServer) GetUser(ctx context.Context, in *user_proto.UserGetRequest) (*user_proto.UserGetResponse, error) {
 	response := user_proto.UserGetResponse{}
 	var req services.UserGetRequest
@@ -128,6 +131,7 @@ func (s *UserServer) GetUser(ctx context.Context, in *user_proto.UserGetRequest)
 	return &response, nil
 }
 
+// GetUsers gets users by grpc service.
 func (s *UserServer) GetUsers(ctx context.Context, in *user_proto.UsersGetRequest) (*user_proto.UserGetResponses, error) {
 	responses := user_proto.UserGetResponses{}
 	var req services.UsersGetRequest

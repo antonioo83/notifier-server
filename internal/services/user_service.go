@@ -27,6 +27,7 @@ type UserRouteParameters struct {
 var RequestError = fmt.Errorf("request has wrong data")
 var NotFoundError = fmt.Errorf("data not found")
 
+// CreateUser create an user by request.
 func CreateUser(userRequest UserCreateRequest, param UserRouteParameters) (token string, error error) {
 	validate := validator.New()
 	err := validate.Struct(userRequest)
@@ -61,6 +62,7 @@ func CreateUser(userRequest UserCreateRequest, param UserRouteParameters) (token
 	return authToken, nil
 }
 
+// UpdateUser update an user by request.
 func UpdateUser(userRequest UserCreateRequest, param UserRouteParameters) (token string, error error) {
 	validate := validator.New()
 	err := validate.Struct(userRequest)
@@ -99,6 +101,7 @@ func UpdateUser(userRequest UserCreateRequest, param UserRouteParameters) (token
 	return authToken, nil
 }
 
+// getAuthToken gets token from HTTP header.
 func getAuthToken() (string, error) {
 	uuidWithHyphen, err := uuid.NewRandom()
 	if err != nil {
@@ -113,6 +116,7 @@ type UserDeleteRequest struct {
 	UserId string `validate:"required,max=64"`
 }
 
+// DeleteUser delete an user by request.
 func DeleteUser(userDeleteRequest UserDeleteRequest, param UserRouteParameters) error {
 	validate := validator.New()
 	err := validate.Struct(userDeleteRequest)
@@ -147,6 +151,7 @@ type UserResponse struct {
 	Description string `json:"description,omitempty" copier:"Description"`
 }
 
+// GetUser get an user by request.
 func GetUser(httpRequest UserGetRequest, param UserRouteParameters) (*UserResponse, error) {
 	validate := validator.New()
 	err := validate.Struct(httpRequest)
@@ -177,6 +182,7 @@ type UsersGetRequest struct {
 	Offset int `validate:"numeric"`
 }
 
+// GetUsers get users by request.
 func GetUsers(httpRequest UsersGetRequest, param UserRouteParameters) ([]UserResponse, error) {
 	validate := validator.New()
 	err := validate.Struct(httpRequest)
@@ -197,6 +203,7 @@ func GetUsers(httpRequest UsersGetRequest, param UserRouteParameters) ([]UserRes
 	return responses, nil
 }
 
+// getUsersResponses gets user responses.
 func getUsersResponses(users *map[int]models.User) ([]UserResponse, error) {
 	var responses []UserResponse
 	for _, user := range *users {

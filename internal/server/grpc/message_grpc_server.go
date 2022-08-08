@@ -22,6 +22,7 @@ type MessageServer struct {
 	JournalRepository  interfaces.JournalRepository
 }
 
+// CreateMessages create messages by grpc service.
 func (s *MessageServer) CreateMessages(ctx context.Context, in *message_proto.MessagesCreateRequest) (*message_proto.MessagesCreateResponse, error) {
 	response := message_proto.MessagesCreateResponse{}
 
@@ -58,6 +59,7 @@ func (s *MessageServer) CreateMessages(ctx context.Context, in *message_proto.Me
 	return &response, err
 }
 
+// DeleteMessage delete a message by grpc service.
 func (s *MessageServer) DeleteMessage(ctx context.Context, in *message_proto.MessageDeleteRequest) (*message_proto.MessageDeleteResponse, error) {
 	response := message_proto.MessageDeleteResponse{}
 	_, err := s.UserAuth.GetAuthUser(in.UserToken)
@@ -89,6 +91,7 @@ func (s *MessageServer) DeleteMessage(ctx context.Context, in *message_proto.Mes
 	return &response, err
 }
 
+// GetMessage get a message by grpc service.
 func (s *MessageServer) GetMessage(ctx context.Context, in *message_proto.MessageGetRequest) (*message_proto.MessageGetResponse, error) {
 	response := message_proto.MessageGetResponse{}
 	var req services.MessageGetRequest

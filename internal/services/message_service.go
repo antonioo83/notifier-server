@@ -44,6 +44,7 @@ type MessageRouteParameters struct {
 	MessageRepository  interfaces.MessageRepository
 }
 
+//CreateMessages create messages by request.
 func CreateMessages(userAuth auth.UserAuth, messageRequests []MessageCreateRequest, param MessageRouteParameters) ([]MessageCreateResponse, error) {
 	var responses []MessageCreateResponse
 	validate := validator.New()
@@ -126,6 +127,7 @@ func CreateMessages(userAuth auth.UserAuth, messageRequests []MessageCreateReque
 	return responses, nil
 }
 
+//getHash generate hash for the resource.
 func getHash(s string) (uint32, error) {
 	h := fnv.New32()
 	_, err := h.Write([]byte(s))
@@ -139,6 +141,7 @@ type MessageDeleteRequest struct {
 	MessageId string `validate:"required,max=64"`
 }
 
+// DeleteMessage delete a message by request.
 func DeleteMessage(r MessageDeleteRequest, param MessageRouteParameters) error {
 	validate := validator.New()
 	err := validate.Struct(r)
@@ -184,6 +187,7 @@ type MessageResponse struct {
 	CreatedAt               string `json:"createdAt"`
 }
 
+// GetMessage get a message by request.
 func GetMessage(httpRequest MessageGetRequest, param MessageRouteParameters) (*MessageResponse, error) {
 	validate := validator.New()
 	err := validate.Struct(httpRequest)
@@ -213,6 +217,7 @@ func GetMessage(httpRequest MessageGetRequest, param MessageRouteParameters) (*M
 	return &response, nil
 }
 
+// getTimeFromStr returns date time in the time format.
 func getTimeFromStr(dateTime string) (time.Time, error) {
 	layout := "2006-01-02 15:04:05"
 	time, err := time.Parse(layout, dateTime)

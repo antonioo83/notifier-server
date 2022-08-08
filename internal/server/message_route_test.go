@@ -30,7 +30,7 @@ type MessageRequestTest struct {
 	description     string
 }
 
-// TestGetMessageRouters
+// TestGetMessageRouters test crud actions for messages.
 func TestGetMessageRouters(t *testing.T) {
 	var pool *pgxpool.Pool
 	context := context.Background()

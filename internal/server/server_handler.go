@@ -22,6 +22,7 @@ type RouteParameters struct {
 	JournalRepository  interfaces.JournalRepository
 }
 
+// GetRouters returns all routers for the server.
 func GetRouters(uh *auth.UserAuthService, p RouteParameters) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
