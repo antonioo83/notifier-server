@@ -9,34 +9,40 @@ import (
 	"strings"
 )
 
-const Admin = 1
-const User = 2
+const (
+	Admin = iota + 1
+	User  = iota + 1
+)
 
 type UserAuth struct {
 	Role int
 	User models.User
 }
 
-type UserAuthHandler struct {
-	userRepository interfaces.UserRepository
-	config         config.Config
+type TokenProvider interface {
+	FindByToken(code string) (*models.User, error)
 }
 
-func NewUserAuth(userRepository interfaces.UserRepository, config config.Config) *UserAuthHandler {
-	return &UserAuthHandler{userRepository, config}
+type UserAuthService struct {
+	tokenProvider TokenProvider
+	config        config.Config
 }
 
-func (u UserAuthHandler) GetAuthUser(token string) (*UserAuth, error) {
+func NewUserAuth(userRepository interfaces.UserRepository, config config.Config) *UserAuthService {
+	return &UserAuthService{userRepository, config}
+}
+
+func (u UserAuthService) GetAuthUser(token string) (*UserAuth, error) {
 	if len(token) < 32 {
-		return nil, fmt.Errorf("User doesn't have correct a token")
+		return nil, fmt.Errorf("user doesn't have correct a token")
 	}
 
-	user, err := u.userRepository.FindByToken(token)
+	user, err := u.tokenProvider.FindByToken(token)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
-		return nil, fmt.Errorf("User not found")
+		return nil, fmt.Errorf("user not found")
 	}
 
 	if user.AuthToken == u.config.Auth.AdminAuthToken && token == user.AuthToken {
@@ -46,7 +52,7 @@ func (u UserAuthHandler) GetAuthUser(token string) (*UserAuth, error) {
 	return &UserAuth{Role: User, User: *user}, nil
 }
 
-func (u UserAuthHandler) GetToken(r *http.Request) string {
+func (u UserAuthService) GetToken(r *http.Request) string {
 	token := r.Header.Get("Authorization")
 	token = strings.Replace(token, "Bearer", "", 1)
 

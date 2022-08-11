@@ -3,9 +3,9 @@ package server
 import (
 	"compress/flate"
 	"github.com/antonioo83/notifier-server/config"
-	"github.com/antonioo83/notifier-server/internal/handlers"
-	"github.com/antonioo83/notifier-server/internal/handlers/auth"
 	"github.com/antonioo83/notifier-server/internal/repositories/interfaces"
+	"github.com/antonioo83/notifier-server/internal/services"
+	"github.com/antonioo83/notifier-server/internal/services/auth"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"golang.org/x/net/context"
@@ -15,11 +15,15 @@ import (
 )
 
 type RouteParameters struct {
-	Config         config.Config
-	UserRepository interfaces.UserRepository
+	Config             config.Config
+	UserRepository     interfaces.UserRepository
+	ResourceRepository interfaces.ResourceRepository
+	MessageRepository  interfaces.MessageRepository
+	JournalRepository  interfaces.JournalRepository
 }
 
-func GetRouters(uh *auth.UserAuthHandler, p RouteParameters) *chi.Mux {
+// GetRouters returns all routers for the server.
+func GetRouters(uh *auth.UserAuthService, p RouteParameters) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -47,7 +51,7 @@ func GetRouters(uh *auth.UserAuthHandler, p RouteParameters) *chi.Mux {
 		})
 	})
 
-	var params = handlers.UserRouteParameters{
+	var params = services.UserRouteParameters{
 		Config:         p.Config,
 		UserRepository: p.UserRepository,
 	}
@@ -56,6 +60,16 @@ func GetRouters(uh *auth.UserAuthHandler, p RouteParameters) *chi.Mux {
 	r = getDeleteUserRoute(r, params)
 	r = getUserRoute(r, params)
 	r = getUsersRoute(r, params)
+
+	var messParams = services.MessageRouteParameters{
+		Config:             p.Config,
+		UserRepository:     p.UserRepository,
+		ResourceRepository: p.ResourceRepository,
+		MessageRepository:  p.MessageRepository,
+	}
+	r = getCreateMessagesRoute(r, messParams)
+	r = getDeleteMessageRoute(r, messParams)
+	r = getMessageRoute(r, messParams)
 
 	return r
 }
