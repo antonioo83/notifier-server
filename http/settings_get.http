@@ -1,0 +1,3 @@
+GET http://localhost:8080/api/v1/defaultSetting?settingId=36a95db8-60a0-47b9-ab67-a069d2d20cb5
+Content-Type: application/json
+Authorization:Bearer 54d1ba805e2a4891aeac9299b618945e

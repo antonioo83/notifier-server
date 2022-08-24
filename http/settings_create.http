@@ -4,6 +4,7 @@ Authorization:Bearer 54d1ba805e2a4891aeac9299b618945e
 
 {
     "settingId": "6371863a-cb98-4847-8d77-c9b1cb983ced",
+    "title": "default setting for all resources",
     "count": 3,
     "intervals": [1, 5, 20],
     "timeout": 5,
