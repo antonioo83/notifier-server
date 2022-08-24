@@ -17,6 +17,7 @@ import (
 type RouteParameters struct {
 	Config             config.Config
 	UserRepository     interfaces.UserRepository
+	SettingRepository  interfaces.SettingRepository
 	ResourceRepository interfaces.ResourceRepository
 	MessageRepository  interfaces.MessageRepository
 	JournalRepository  interfaces.JournalRepository
@@ -60,6 +61,16 @@ func GetRouters(uh *auth.UserAuthService, p RouteParameters) *chi.Mux {
 	r = getDeleteUserRoute(r, params)
 	r = getUserRoute(r, params)
 	r = getUsersRoute(r, params)
+
+	var settingParams = services.SettingRouteParameters{
+		Config:            p.Config,
+		SettingRepository: p.SettingRepository,
+	}
+	r = getCreateSettingRoute(r, settingParams)
+	r = getUpdateSettingRoute(r, settingParams)
+	r = getDeleteSettingRoute(r, settingParams)
+	r = getSettingRoute(r, settingParams)
+	r = getSettingsRoute(r, settingParams)
 
 	var messParams = services.MessageRouteParameters{
 		Config:             p.Config,

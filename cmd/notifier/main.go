@@ -51,6 +51,7 @@ func main() {
 	defer pool.Close()
 
 	userRepository := factory.NewUserRepository(context, pool)
+	settingRepository := factory.NewSettingRepository(context, pool)
 	resourceRepository := factory.NewResourceRepository(context, pool)
 	messageRepository := factory.NewMessageRepository(context, pool)
 	journalRepository := factory.NewJournalRepository(context, pool)
@@ -59,6 +60,7 @@ func main() {
 		server.RouteParameters{
 			Config:             cfg,
 			UserRepository:     userRepository,
+			SettingRepository:  settingRepository,
 			ResourceRepository: resourceRepository,
 			MessageRepository:  messageRepository,
 			JournalRepository:  journalRepository,
