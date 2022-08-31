@@ -51,15 +51,19 @@ func TestGetMessageRouters(t *testing.T) {
 	defer pool.Close()
 
 	userRepository := factory.NewUserRepository(context, pool)
+	settingRepository := factory.NewSettingRepository(context, pool)
 	resourceRepository := factory.NewResourceRepository(context, pool)
 	messageRepository := factory.NewMessageRepository(context, pool)
 	userAuthHandler := factory2.NewUserAuthHandler(userRepository, cfg)
+	journalRepository := factory.NewJournalRepository(context, pool)
 	routeParameters :=
 		RouteParameters{
 			Config:             cfg,
 			UserRepository:     userRepository,
+			SettingRepository:  settingRepository,
 			ResourceRepository: resourceRepository,
 			MessageRepository:  messageRepository,
+			JournalRepository:  journalRepository,
 		}
 
 	r := GetRouters(userAuthHandler, routeParameters)

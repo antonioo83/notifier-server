@@ -9,20 +9,27 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jinzhu/copier"
 	"hash/fnv"
+	"strconv"
 	"time"
 )
 
 type MessageCreateRequest struct {
-	MessageId               string `validate:"required,max=64" faker:"uuid_hyphenated" json:"messageId,omitempty`
-	Priority                string `validate:"required,oneof='high' 'low' 'normal'" faker:"oneof: high,low,normal" json:"priority,omitempty"`
-	URL                     string `validate:"required,max=1000" faker:"url" json:"url,omitempty"`
-	Command                 string `validate:"required,max=10" faker:"oneof: post,put" json:"command,omitempty"`
-	Content                 string `validate:"required" faker:"len=20" json:"content,omitempty"`
-	SendAt                  string `validate:"-" faker:"timestamp" json:"sendAt,omitempty"`
-	SuccessHttpStatus       int    `validate:"numeric" faker:"oneof: 200,201,204" json:"successHttpStatus,omitempty"`
-	SuccessResponse         string `validate:"max=300" faker:"len=10" json:"successResponse,omitempty"`
-	Description             string `validate:"max=100" faker:"len=100" json:"description,omitempty"`
+	MessageId               string                `validate:"required,max=64" faker:"uuid_hyphenated" json:"messageId"`
+	Priority                string                `validate:"required,oneof='high' 'low' 'normal'" faker:"oneof: high,low,normal" json:"priority,omitempty"`
+	Resource                ResourceCreateRequest `validate:"required" json:"resource,omitempty"`
+	Command                 string                `validate:"required,max=10" faker:"oneof: post,put" json:"command,omitempty"`
+	Content                 string                `validate:"required" faker:"len=20" json:"content,omitempty"`
+	SendAt                  string                `validate:"-" faker:"timestamp" json:"sendAt,omitempty"`
+	SuccessHttpStatus       int                   `validate:"numeric" faker:"oneof: 200,201,204" json:"successHttpStatus,omitempty"`
+	SuccessResponse         string                `validate:"max=300" faker:"len=10" json:"successResponse,omitempty"`
+	Description             string                `validate:"max=100" faker:"len=100" json:"description,omitempty"`
 	isSendNotReceivedNotify bool
+}
+
+type ResourceCreateRequest struct {
+	URL         string               `validate:"required,max=1000" faker:"url" json:"url,omitempty"`
+	Description string               `validate:"max=100" faker:"len=100" json:"description,omitempty"`
+	Setting     SettingCreateRequest `validate:"-" json:"setting,omitempty"`
 }
 
 const (
@@ -31,10 +38,11 @@ const (
 )
 
 type MessageCreateResponse struct {
-	MessageID string
-	Code      int
-	Message   string
-	err       error
+	MessageID  string `json:"messageId"`
+	ResourceID string `json:"resourceId"`
+	Code       int    `json:"code"`
+	Message    string `json:"message"`
+	err        error
 }
 
 type MessageRouteParameters struct {
@@ -42,6 +50,7 @@ type MessageRouteParameters struct {
 	UserRepository     interfaces.UserRepository
 	ResourceRepository interfaces.ResourceRepository
 	MessageRepository  interfaces.MessageRepository
+	SettingRepository  interfaces.SettingRepository
 }
 
 //CreateMessages create messages by request.
@@ -50,20 +59,7 @@ func CreateMessages(userAuth auth.UserAuth, messageRequests []MessageCreateReque
 	validate := validator.New()
 	for _, messageRequest := range messageRequests {
 		response := MessageCreateResponse{MessageID: messageRequest.MessageId, Code: ErrorCode}
-		if messageRequest.Priority == "" {
-			messageRequest.Priority = "normal"
-		}
-		if messageRequest.Command == "" {
-			messageRequest.Command = "POST"
-		}
-		if messageRequest.SendAt == "" {
-			now := time.Now()
-			messageRequest.SendAt = now.Format("2006-01-02 15:04:05")
-		}
-		if messageRequest.SuccessHttpStatus == 0 {
-			messageRequest.SuccessHttpStatus = 201
-		}
-
+		messageRequest = bringValues(messageRequest)
 		err := validate.Struct(messageRequest)
 		if err != nil {
 			return nil, fmt.Errorf("this request has mistake: %w", err)
@@ -77,27 +73,39 @@ func CreateMessages(userAuth auth.UserAuth, messageRequests []MessageCreateReque
 			return nil, fmt.Errorf("this message already exist: %w", err)
 		}
 
-		hash, err := getHash(messageRequest.URL)
+		resourceCode, err := getHash(messageRequest.Resource.URL)
 		if err != nil {
 			return nil, fmt.Errorf("can't generate hash by resource url: %w", err)
 		}
-
-		resource, err := param.ResourceRepository.FindByCode(int(hash))
+		resource, err := param.ResourceRepository.FindByCode(resourceCode)
 		if err != nil {
 			return nil, fmt.Errorf("can't get resource from the database: %w", err)
 		}
 		resourceId := 0
 		if resource == nil {
 			resourceId, err = param.ResourceRepository.Save(models.Resource{
-				UserId: userAuth.User.ID,
-				Code:   int64(hash),
-				URL:    messageRequest.URL,
+				UserId:      userAuth.User.ID,
+				Code:        resourceCode,
+				URL:         messageRequest.Resource.URL,
+				Description: messageRequest.Resource.Description,
 			})
 			if err != nil {
 				return nil, fmt.Errorf("can't create resource in the database: %w", err)
 			}
 		} else {
 			resourceId = resource.ID
+		}
+
+		var setting models.Setting
+		err = copier.Copy(&setting, &messageRequest.Resource.Setting)
+		if err != nil {
+			return nil, fmt.Errorf("can't copy data from the request: %w", err)
+		}
+		setting.UserId = userAuth.User.ID
+		setting.ResourceId = resourceId
+		err = param.SettingRepository.Replace(setting)
+		if err != nil {
+			return nil, fmt.Errorf("can't replace a setting in the database: %w", err)
 		}
 
 		var message models.Message
@@ -119,6 +127,7 @@ func CreateMessages(userAuth auth.UserAuth, messageRequests []MessageCreateReque
 			return nil, fmt.Errorf("can't create a message in the database: %w", err)
 		}
 
+		response.ResourceID = resourceCode
 		response.Code = SuccessCode
 		response.Message = "Ok"
 		responses = append(responses, response)
@@ -127,18 +136,37 @@ func CreateMessages(userAuth auth.UserAuth, messageRequests []MessageCreateReque
 	return responses, nil
 }
 
+func bringValues(request MessageCreateRequest) MessageCreateRequest {
+	if request.Priority == "" {
+		request.Priority = "normal"
+	}
+	if request.Command == "" {
+		request.Command = "POST"
+	}
+	if request.SendAt == "" {
+		now := time.Now()
+		request.SendAt = now.Format("2006-01-02 15:04:05")
+	}
+	if request.SuccessHttpStatus == 0 {
+		request.SuccessHttpStatus = 201
+	}
+
+	return request
+}
+
 //getHash generate hash for the resource.
-func getHash(s string) (uint32, error) {
-	h := fnv.New32()
+func getHash(s string) (string, error) {
+	h := fnv.New64()
 	_, err := h.Write([]byte(s))
 	if err != nil {
-		return 0, fmt.Errorf("can't generate hash: %w", err)
+		return "", fmt.Errorf("can't generate hash: %w", err)
 	}
-	return h.Sum32(), nil
+
+	return strconv.FormatUint(h.Sum64(), 10), nil
 }
 
 type MessageDeleteRequest struct {
-	MessageId string `validate:"required,max=64"`
+	MessageId string `json:"messageId" validate:"required,max=64"`
 }
 
 // DeleteMessage delete a message by request.
@@ -170,21 +198,27 @@ type MessageGetRequest struct {
 }
 
 type MessageResponse struct {
-	MessageId               string `json:"messageId`
-	Priority                string `json:"priority"`
-	URL                     string `json:"url"`
-	Command                 string `json:"command"`
-	Content                 string `json:"content"`
-	SendAt                  string `json:"sendAt"`
-	SuccessHttpStatus       int    `json:"successHttpStatus"`
-	SuccessResponse         string `json:"successResponse"`
-	Description             string `json:"description"`
-	IsSendNotReceivedNotify bool   `json:"isSendNotReceivedNotify"`
-	IsSent                  bool   `json:"isSent"`
-	AttemptCount            int    `json:"attemptCount"`
-	IsSentCallback          bool   `json:"isSentCallback"`
-	CallbackAttemptCount    int    `json:"callbackAttemptCount"`
-	CreatedAt               string `json:"createdAt"`
+	MessageId               string           `json:"messageId"`
+	Priority                string           `json:"priority"`
+	Resource                ResourceResponse `validate:"required" json:"resource,omitempty"`
+	Command                 string           `json:"command"`
+	Content                 string           `json:"content"`
+	SendAt                  string           `json:"sendAt"`
+	SuccessHttpStatus       int              `json:"successHttpStatus"`
+	SuccessResponse         string           `json:"successResponse"`
+	Description             string           `json:"description"`
+	IsSendNotReceivedNotify bool             `json:"isSendNotReceivedNotify"`
+	IsSent                  bool             `json:"isSent"`
+	AttemptCount            int              `json:"attemptCount"`
+	IsSentCallback          bool             `json:"isSentCallback"`
+	CallbackAttemptCount    int              `json:"callbackAttemptCount"`
+	CreatedAt               string           `json:"createdAt"`
+}
+
+type ResourceResponse struct {
+	URL         string          `validate:"required,max=1000" faker:"url" json:"url,omitempty"`
+	Description string          `validate:"max=100" faker:"len=100" json:"description,omitempty"`
+	Setting     SettingResponse `validate:"-" json:"setting,omitempty"`
 }
 
 // GetMessage get a message by request.
@@ -209,10 +243,16 @@ func GetMessage(httpRequest MessageGetRequest, param MessageRouteParameters) (*M
 	if err != nil {
 		return nil, fmt.Errorf("can't copy data for the response: %w", err)
 	}
+	err = copier.Copy(&response.Resource, &message.Resource)
+	if err != nil {
+		return nil, fmt.Errorf("can't copy resource data for the response: %w", err)
+	}
+	err = copier.Copy(&response.Resource.Setting, &message.Resource.Setting)
+	if err != nil {
+		return nil, fmt.Errorf("can't copy setting data for the response: %w", err)
+	}
 	response.SendAt = message.SendAt.Format("2006-01-02 15:04:05")
 	response.CreatedAt = message.CreatedAt.Format("2006-01-02 15:04:05")
-
-	response.URL = message.Resource.URL
 
 	return &response, nil
 }

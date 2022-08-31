@@ -124,18 +124,25 @@ func (u messageRepository) FindByCode(code string) (*models.Message, error) {
 	var model models.Message
 	err := u.connection.QueryRow(
 		u.context,
-		`SELECT r.url, m.id, m.code, m.user_id, m.resource_id, m.command, m.priority, m.content, m.is_sent, m.attempt_count, 
+		`SELECT r.url, r.description, m.id, m.code, m.user_id, m.resource_id, m.command, m.priority, m.content, m.is_sent, m.attempt_count, 
 				m.is_sent_callback, m.callback_attempt_count, m.description, m.send_at, m.success_http_status, 
-                m.success_response, m.created_at 
+                m.success_response, m.created_at,
+                COALESCE(s.code, ''), COALESCE(s.title, ''), COALESCE(s.callback_url, ''), COALESCE(s.count,0), COALESCE(s.intervals,'{}'), 
+                COALESCE(s.timeout, 0), COALESCE(s.description, '')
              FROM 
                ns_messages m
              LEFT JOIN ns_resources r ON r.id=m.resource_id 
+             LEFT JOIN ns_settings s ON s.resource_id=m.resource_id 
              WHERE 
                m.code=$1 AND m.deleted_at IS NULL`,
 		code,
-	).Scan(&model.Resource.URL, &model.ID, &model.Code, &model.UserId, &model.ResourceId, &model.Command, &model.Priority,
+	).Scan(&model.Resource.URL, &model.Resource.Description, &model.ID, &model.Code, &model.UserId, &model.ResourceId, &model.Command, &model.Priority,
 		&model.Content, &model.IsSent, &model.AttemptCount, &model.IsSentCallback, &model.CallbackAttemptCount,
-		&model.Description, &model.SendAt, &model.SuccessHttpStatus, &model.SuccessResponse, &model.CreatedAt)
+		&model.Description, &model.SendAt, &model.SuccessHttpStatus, &model.SuccessResponse, &model.CreatedAt,
+		&model.Resource.Setting.Code, &model.Resource.Setting.Title, &model.Resource.Setting.CallbackURL,
+		&model.Resource.Setting.Count, &model.Resource.Setting.Intervals, &model.Resource.Setting.Timeout,
+		&model.Resource.Setting.Description,
+	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	} else if err != nil {
