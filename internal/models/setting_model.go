@@ -17,5 +17,4 @@ type Setting struct {
 	UpdatedAt   time.Time // Date and time the message was updated.
 	DeletedAt   time.Time // Date and time the message was deleted.
 	User        User      // User relation.
-	Resource    Resource  // Resource relation.
 }

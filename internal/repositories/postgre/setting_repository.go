@@ -55,6 +55,34 @@ func (s settingRepository) Update(model models.Setting) error {
 	return nil
 }
 
+// Replace replaces a setting in the database.
+func (s settingRepository) Replace(model models.Setting) error {
+	var lastInsertId int
+	err := s.connection.QueryRow(
+		s.context,
+		`INSERT INTO 
+               ns_settings (code, user_id, resource_id, title, callback_url, count, intervals, timeout, description)
+             VALUES ($1, $2, NULLIF($3,0), $4, $5, $6, $7, $8, $9)
+			ON CONFLICT (user_id, resource_id, code) DO UPDATE 
+			SET
+			  title = excluded.title,
+			  callback_url = excluded.callback_url,
+			  count = excluded.count,
+			  intervals = excluded.intervals,
+              timeout = excluded.timeout,
+              description = excluded.description,
+              updated_at=NOW()
+             RETURNING id`,
+		&model.Code, &model.UserId, &model.ResourceId, &model.Title, &model.CallbackURL, &model.Count, &model.Intervals,
+		&model.Timeout, &model.Description,
+	).Scan(&lastInsertId)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
 // Delete deletes a setting in the database.
 func (s settingRepository) Delete(userId int, code string) error {
 	_, err := s.connection.Exec(
@@ -78,6 +106,29 @@ func (s settingRepository) FindByCode(userId int, code string) (*models.Setting,
              WHERE 
                user_id=$1 AND code=$2 AND deleted_at IS NULL`,
 		userId, code,
+	).Scan(&model.ID, &model.Code, &model.UserId, &model.ResourceId, &model.Title, &model.CallbackURL, &model.Count,
+		&model.Intervals, &model.Timeout, &model.Description, &model.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &model, nil
+}
+
+// FindByResource finds a setting in the database by resource id.
+func (s settingRepository) FindByResource(resourceId int) (*models.Setting, error) {
+	var model models.Setting
+	err := s.connection.QueryRow(
+		s.context,
+		`SELECT 
+               id, code, user_id, COALESCE(resource_id, 0), title, callback_url, count, intervals, timeout, description, created_at 
+             FROM 
+               ns_settings 
+             WHERE 
+               resource_id=$1 AND code=$2 AND deleted_at IS NULL`,
+		resourceId,
 	).Scan(&model.ID, &model.Code, &model.UserId, &model.ResourceId, &model.Title, &model.CallbackURL, &model.Count,
 		&model.Intervals, &model.Timeout, &model.Description, &model.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
