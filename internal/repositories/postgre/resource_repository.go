@@ -34,14 +34,14 @@ func (r resourceRepository) Save(resource models.Resource) (int, error) {
 }
 
 // Delete deletes a resource from the database.
-func (r resourceRepository) Delete(code int) error {
+func (r resourceRepository) Delete(code string) error {
 	_, err := r.connection.Exec(r.context, "UPDATE ns_resources SET deleted_at=NOW() WHERE code=$1 AND deleted_at IS NULL", code)
 
 	return err
 }
 
 // FindByCode find a resource by code.
-func (r resourceRepository) FindByCode(code int) (*models.Resource, error) {
+func (r resourceRepository) FindByCode(code string) (*models.Resource, error) {
 	var model models.Resource
 	err := r.connection.QueryRow(
 		r.context,
@@ -58,7 +58,7 @@ func (r resourceRepository) FindByCode(code int) (*models.Resource, error) {
 }
 
 // IsInDatabase a resource exists in the database.
-func (r resourceRepository) IsInDatabase(code int) (bool, error) {
+func (r resourceRepository) IsInDatabase(code string) (bool, error) {
 	model, err := r.FindByCode(code)
 
 	return !(model == nil), err
