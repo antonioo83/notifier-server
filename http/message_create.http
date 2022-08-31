@@ -4,15 +4,18 @@ Authorization:Bearer 54d1ba805e2a4891aeac9299b618945e
 
 [
   {
-    "messageId": "6371863a-cb98-4847-8d77-c9b1cb983ced-5",
+    "messageId": "6371863a-cb98-4847-8d77-c9b1cb983ced-8",
     "resource": {
       "url": "http://api-courier-ireca-feature-test.ireca.site/api/v1/orders/test",
       "description": "External resource",
-      "settings": {
+      "setting": {
+        "settingId": "6371863a-cb98-4847-8d77-c9b1cb983ced",
+        "title": "default setting for all resources",
         "count": 3,
         "intervals": [1, 5, 20],
         "timeout": 5,
-        "callbackUrl": ""
+        "callbackUrl": "http://api-courier-ireca-feature-test.ireca.site/api/v1/orders/notify",
+        "description": "default settings"
       }
     },
     "priority": "normal",
